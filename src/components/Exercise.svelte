@@ -1,9 +1,10 @@
 <script lang="ts">
     import katex from "katex";
-    import { afterUpdate } from "svelte";
+    import { afterUpdate, beforeUpdate } from "svelte";
     import type { Exercise } from "../types";
     import { instructorEnabled } from "../stores/instructor";
     import { Nav, NavItem, NavLink, Row, Col } from "sveltestrap";
+    import Penrose from "./Penrose.svelte";
 
     export let exercise: Exercise;
     export let hiddenAnswer: boolean = true;
@@ -28,7 +29,7 @@
     };
 
     let exerciseDiv: Element;
-    const decorateAnswer = () => {
+    const decorateAnswer = async () => {
         if (exerciseDiv) {
             for (let e of exerciseDiv.getElementsByClassName(
                 "exercise-answer"
@@ -58,21 +59,6 @@
         e.preventDefault();
         mode = m;
     };
-
-    let penroseDiv: Element;
-    const renderPenrose = async () => {
-        if (penroseDiv) {
-            const res = await fetch("state.json");
-            const state = await res.json();
-            console.log(state);
-
-            if (penroseDiv) {
-                var elem = penroseDiv.getElementsByClassName("penrose")[0];
-                window.penrose.API.diagram(state, elem);
-            }
-        }
-    };
-    afterUpdate(renderPenrose);
 </script>
 
 <style>
@@ -86,12 +72,6 @@
         margin-bottom: 1em;
     }
 </style>
-
-<svelte:head>
-    <script src="penrose.js">
-
-    </script>
-</svelte:head>
 
 {#if !statementOnly}
     {#if $instructorEnabled}
@@ -119,6 +99,7 @@
         {#if mode == 'display'}
             <div bind:this={exerciseDiv}>
                 {@html parseMath(exercise.html)}
+                <Penrose {exercise} />
             </div>
         {:else if mode == 'html'}
             <pre class="pre-scrollable"><code>{exercise.html}</code></pre>
@@ -127,9 +108,7 @@
         {:else if mode == 'pretext'}
             <pre class="pre-scrollable"><code>{exercise.pretext}</code></pre>
         {:else if mode == 'penrose'}
-            <div bind:this={penroseDiv}>
-                <div class="penrose" style="width: 50%; margin: auto;" />
-            </div>
+            <Penrose {exercise} />
         {:else}Invalid mode.{/if}
     </Col>
 </Row>
